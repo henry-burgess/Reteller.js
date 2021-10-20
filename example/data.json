@@ -1,0 +1,28 @@
+{
+  "configuration": {
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    }
+  },
+  "data": {
+    "1000": {
+      "type": "keypress",
+      "data": "J"
+    },
+    "2000": {
+      "type": "mouse",
+      "data": {
+        "x": 493,
+        "y": 1029
+      }
+    },
+    "3000": {
+      "type": "click",
+      "data": {
+        "x": 493,
+        "y": 1029
+      }
+    }
+  }
+}

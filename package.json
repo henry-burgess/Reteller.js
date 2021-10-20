@@ -1,0 +1,22 @@
+{
+  "name": "reenact",
+  "version": "1.0.0",
+  "description": "A library used to record and then replay participant interaction with an online behavioral experiment.",
+  "main": "index.js",
+  "repository": "https://henry-burgess@github.com/henry-burgess/reenact.git",
+  "author": "Henry Burgess <henryjburg@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "dev": "parcel example/index.html"
+  },
+  "dependencies": {
+    "jspsych": "6.3.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.1",
+    "eslint-config-google": "^0.14.0",
+    "gulp": "^4.0.2",
+    "parcel": "^2.0.0",
+    "typescript": "^4.4.4"
+  }
+}
