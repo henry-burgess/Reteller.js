@@ -5,24 +5,27 @@
       "height": 1080
     }
   },
-  "data": {
-    "1000": {
-      "type": "keypress",
+  "events": [
+    {
+      "time": "1000.1",
+      "type": "keyboard",
       "data": "J"
     },
-    "2000": {
+    {
+      "time": "2000.2",
       "type": "mouse",
       "data": {
         "x": 493,
         "y": 1029
       }
     },
-    "3000": {
+    {
+      "time": "3000",
       "type": "click",
       "data": {
         "x": 493,
         "y": 1029
       }
     }
-  }
+  ]
 }

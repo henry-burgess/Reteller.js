@@ -5,5 +5,5 @@ import { Player } from '../src/main';
 import * as data from './data.json';
 
 // Configure the Player class and feed it the JSON data
-const player = new Player(data);
+const player = new Player(data, 100);
 player.start();
