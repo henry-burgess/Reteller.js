@@ -1,8 +1,6 @@
-import { Loader } from "./Loader";
+import { PlayerEvent } from "./PlayerEvent";
 
 export class Player {
-  private loader: Loader;
-
   // Data
   private data: JSON;
   private configuration: any;
@@ -16,9 +14,15 @@ export class Player {
   // Start times
   private startTime: number;
 
+  /**
+   * Default constructor for the Player class.
+   * @param _data Object containing all the collected data
+   * used to replay the participant actions
+   * @param _rate Tick rate to use for performing the actions.
+   * Measured using milliseconds. Default is 1 millisecond tick
+   * interval.
+   */
   constructor(_data: JSON, _rate=1) {
-    this.loader = new Loader();
-
     // Setup the tick rate
     this.rate = _rate;
     this.ticks = 0;
@@ -28,8 +32,19 @@ export class Player {
     this.configuration = this.data['configuration'];
     this.events = this.data['events'];
     this._cleanse();
+
+    // General setup of screen and layout
+    this._setup();
   }
 
+  private _setup() {
+    // Resize the window
+    window.resizeTo(this.configuration['viewport']['width'], this.configuration['viewport']['height']);
+  }
+
+  /**
+   * Data cleansing and normalizing method
+   */
   private _cleanse() {
     // Perform important data cleaning
     // Normalise timing information to round down to nearest millisecond
@@ -40,6 +55,10 @@ export class Player {
     }
   }
 
+  /**
+   * Method called each tick in the window interval.
+   * @param player Instance of the Player class
+   */
   private _tick(player: Player) {
     player.ticks++;
 
@@ -52,7 +71,7 @@ export class Player {
 
       if (eventTime <= delta) {
         // Pop and perform the event if the time has elapsed
-        const _event = player.events.shift();
+        const _event = new PlayerEvent(player.events.shift());
         player._perform(_event);
       }
     } else {
@@ -80,15 +99,27 @@ export class Player {
     );
   }
 
-  private _perform(_event: any) {
-    if (_event.type === 'keyboard') {
-      console.debug(`[Event] Keyboard event @ ${Date.now()}`);
-    } else if (_event.type === 'mouse') {
+  private _perform(_event: PlayerEvent) {
+    if (_event.getType() === 'keyboard') {
+      this._keyboardEvent(_event);
+    } else if (_event.getType() === 'mouse') {
       console.debug(`[Event] Mouse movement event @ ${Date.now()}`);
-    } else if (_event.type === 'click') {
+    } else if (_event.getType() === 'click') {
       console.debug(`[Event] Click event @ ${Date.now()}`);
     } else {
-      console.error(`[Event] Unknown event type '${_event.type}'`);
+      console.error(`[Event] Unknown event type '${_event.getType()}'`);
     }
+  }
+
+  private _keyboardEvent(_event: PlayerEvent) {
+    console.debug(`[Event] Keyboard event @ ${Date.now()}`);
+
+    // Create a new KeyboardEvent
+    const _toSend = new KeyboardEvent('keydown', {
+      code: 'KeyJ',
+    });
+
+    // Send the event
+    document.body.dispatchEvent(_toSend);
   }
 }
