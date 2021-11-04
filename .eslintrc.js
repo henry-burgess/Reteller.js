@@ -3,6 +3,7 @@ module.exports = {
   ignorePatterns: [
     'webpack.config.js',
     'gulpfile.js',
+    'experiment.js',
     '.eslintrc.js',
     'jest-puppeteer.config.js',
     'jest.config.js',

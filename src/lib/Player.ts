@@ -1,10 +1,17 @@
-import { PlayerEvent } from "./PlayerEvent";
+import {PlayerEvent} from './PlayerEvent';
 
+/**
+ * Player class for running the re-enactment
+ */
 export class Player {
   // Data
   private data: JSON;
   private configuration: any;
   private events: any[];
+
+  // Target HTMLElement
+  private targetSelector: string;
+  private target: HTMLElement;
 
   // Tick and rate
   private rate: number;
@@ -16,16 +23,20 @@ export class Player {
 
   /**
    * Default constructor for the Player class.
-   * @param _data Object containing all the collected data
+   * @param {JSON} _data Object containing all the collected data
    * used to replay the participant actions
-   * @param _rate Tick rate to use for performing the actions.
+   * @param {string} _targetSelector CSS selector of the target
+   * @param {number} _rate Tick rate to use for performing the actions.
    * Measured using milliseconds. Default is 1 millisecond tick
    * interval.
    */
-  constructor(_data: JSON, _rate=1) {
+  constructor(_data: JSON, _targetSelector: string, _rate=1) {
     // Setup the tick rate
     this.rate = _rate;
     this.ticks = 0;
+
+    // Store the target selector
+    this.targetSelector = _targetSelector;
 
     // Load and cleanse the data
     this.data = _data;
@@ -37,9 +48,15 @@ export class Player {
     this._setup();
   }
 
-  private _setup() {
+  /**
+   * Conduct any required setup
+   */
+  private _setup(): void {
     // Resize the window
-    window.resizeTo(this.configuration['viewport']['width'], this.configuration['viewport']['height']);
+    window.resizeTo(
+        this.configuration['viewport']['width'],
+        this.configuration['viewport']['height'],
+    );
   }
 
   /**
@@ -57,7 +74,7 @@ export class Player {
 
   /**
    * Method called each tick in the window interval.
-   * @param player Instance of the Player class
+   * @param {Player} player Instance of the Player class
    */
   private _tick(player: Player) {
     player.ticks++;
@@ -80,46 +97,88 @@ export class Player {
     }
   }
 
-  public start() {
+  /**
+   * Start the Player routine
+   */
+  public start(): void {
     this.startTime = Date.now();
     console.info(`[Player] Playback started @ ${this.startTime}`);
 
+    // Store the target
+    // this.target = document.querySelector(this.targetSelector);
+    this.target = document.body;
+    if (this.target === null) {
+      console.warn(`Target '${this.targetSelector}' not found, ` +
+                    `defaulting to 'document.body'`);
+      this.target = document.body;
+    }
+
     this.ticker = window.setInterval(
-      this._tick,
-      this.rate,
-      this,
+        this._tick,
+        this.rate,
+        this,
     );
   }
 
+  /**
+   * Halt the Player routine
+   */
   public stop() {
     console.info(`[Player] Playback finished @ ${Date.now()}`);
 
     window.clearInterval(
-      this.ticker
+        this.ticker,
     );
   }
 
+  /**
+   * Select the appropriate function to handle the
+   * PlayerEvent retrieved from the data
+   * @param {PlayerEvent} _event the PlayerEvent to dispatch
+   */
   private _perform(_event: PlayerEvent) {
     if (_event.getType() === 'keyboard') {
       this._keyboardEvent(_event);
     } else if (_event.getType() === 'mouse') {
-      console.debug(`[Event] Mouse movement event @ ${Date.now()}`);
+      this._mouseEvent(_event);
     } else if (_event.getType() === 'click') {
-      console.debug(`[Event] Click event @ ${Date.now()}`);
+      this._clickEvent(_event);
     } else {
       console.error(`[Event] Unknown event type '${_event.getType()}'`);
     }
   }
 
+  /**
+   * Dispatch a keyboard press
+   * @param {PlayerEvent} _event the PlayerEvent to dispatch
+   */
   private _keyboardEvent(_event: PlayerEvent) {
     console.debug(`[Event] Keyboard event @ ${Date.now()}`);
 
-    // Create a new KeyboardEvent
-    const _toSend = new KeyboardEvent('keydown', {
-      code: 'KeyJ',
-    });
-
     // Send the event
-    document.body.dispatchEvent(_toSend);
+    this.target.dispatchEvent(new KeyboardEvent('keydown', {
+      key: _event.getData(),
+    }));
+  }
+
+  /**
+   * Dispatch mouse movement
+   * @param {PlayerEvent} _event the PlayerEvent to dispatch
+   */
+  private _mouseEvent(_event: PlayerEvent) {
+    console.debug(`[Event] Mouse movement event @ ${Date.now()}`);
+  }
+
+  /**
+   * Dispatch a mouse click
+   * @param {PlayerEvent} _event the PlayerEvent to dispatch
+   */
+  private _clickEvent(_event: PlayerEvent) {
+    console.debug(`[Event] Click event @ ${Date.now()}`);
+
+    // Click the element at the specific point
+    (document.elementFromPoint(
+        _event.getData()['x'],
+        _event.getData()['y']) as HTMLElement).click();
   }
 }
