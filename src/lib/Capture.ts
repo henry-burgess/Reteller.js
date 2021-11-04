@@ -93,22 +93,40 @@ export class Capture {
    * @param {string} _type the type of handler
    */
   private _createHandler(_type: string) {
-    // Create the keypress or mouse handler
+    if (_type === LISTENER.CLICK) {
+      document.body.addEventListener('click', (e) => {
+        this._clickEvent(e, this);
+      });
+    } else if (_type === LISTENER.KEYBOARD) {
+      document.body.addEventListener('keydown', (e) => {
+        this._keyboardEvent(e, this);
+      });
+    } else {
+      console.warn(`Unknown handler type '${_type}'`);
+    }
   }
 
   /**
    * Create a new Keyboard event handler
+   * @param {KeyboardEvent} _e the KeyboardEvent raised
+   * @param {Capture} _capture the Capture instance
    */
-  private _keyboardEvent() {
-    // Called on a keyboard event
+  private _keyboardEvent(_e: KeyboardEvent, _capture: Capture) {
+    _capture._logEvent(
+        Date.now(),
+        LISTENER.KEYBOARD,
+        {
+          key: _e.key,
+        }
+    );
   }
 
   /**
    * Create a new Click event handler
-   * @param {PointerEvent} _e the PointEvent raised
+   * @param {MouseEvent} _e the PointEvent raised
    * @param {Capture} _capture the Capture instance
    */
-  private _clickEvent(_e: PointerEvent, _capture: Capture) {
+  private _clickEvent(_e: MouseEvent, _capture: Capture) {
     _capture._logEvent(
         Date.now(),
         LISTENER.CLICK,
