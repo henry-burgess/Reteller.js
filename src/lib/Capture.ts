@@ -1,4 +1,5 @@
-import {PlayerEvent} from './PlayerEvent';
+import {PlayerEvent} from './classes/PlayerEvent';
+import {Component} from './interfaces/Component';
 
 const LISTENER = {
   KEYBOARD: 'keyboard',
@@ -10,7 +11,7 @@ const LISTENER = {
  * Capture class that handles data capturing
  * and storage
  */
-export class Capture {
+export class Capture implements Component {
   // Data storage target
   private data: PlayerEvent[];
 
@@ -136,8 +137,8 @@ export class Capture {
         {
           configuration: {
             viewport: {
-              width: this.getResolution[0],
-              height: this.getResolution[1],
+              width: this.getResolution()[0],
+              height: this.getResolution()[1],
             },
           },
           events: this.data,

@@ -1,13 +1,21 @@
-import {PlayerEvent} from './PlayerEvent';
+import {PlayerEvent} from './classes/PlayerEvent';
+import {Component} from './interfaces/Component';
 
 /**
  * Player class for running the re-enactment
  */
-export class Player {
+export class Player implements Component {
   // Data
   private data: JSON;
   private configuration: any;
   private events: any[];
+  private location: string;
+
+  // Rescaling
+  private captureResolution: [number, number];
+  private playerResolution: [number, number];
+  private scalingWidth: number;
+  private scalingHeight: number;
 
   // Target HTMLElement
   private targetSelector: string;
@@ -28,14 +36,14 @@ export class Player {
 
   /**
    * Default constructor for the Player class.
-   * @param {JSON} _data Object containing all the collected data
+   * @param {any} _data Object containing all the collected data
    * used to replay the participant actions
    * @param {string} _targetSelector CSS selector of the target
    * @param {number} _rate Tick rate to use for performing the actions.
    * Measured using milliseconds. Default is 1 millisecond tick
    * interval.
    */
-  constructor(_data: JSON, _targetSelector: string, _rate=1) {
+  constructor(_data: any, _targetSelector: string, _rate=1) {
     // Setup the tick rate
     this.rate = _rate;
     this.ticks = 0;
@@ -57,17 +65,27 @@ export class Player {
    * Conduct any required setup
    */
   private _setup(): void {
-    // Resize the window
-    window.resizeTo(
-        this.configuration['viewport']['width'],
-        this.configuration['viewport']['height'],
-    );
+    // Get the capture dimensions
+    this.captureResolution = [
+      this.configuration['viewport']['width'],
+      this.configuration['viewport']['height'],
+    ];
+
+    // Get the player dimensions
+    this.playerResolution = [
+      window.innerWidth,
+      window.innerHeight,
+    ];
+
+    // Calculate and store the scaling width and height
+    this.scalingWidth = this.playerResolution[0] / this.captureResolution[0];
+    this.scalingHeight = this.playerResolution[1] / this.captureResolution[1];
   }
 
   /**
    * Data cleansing and normalizing method
    */
-  private _cleanse() {
+  private _cleanse(): void {
     // Perform important data cleaning
     // Normalise timing information to round down to nearest millisecond
     for (let i = 0; i < this.events.length; i++) {
@@ -187,14 +205,15 @@ export class Player {
     // Check if the mouse cursor has been created yet
     if (this.mouseMarker) {
       // Update the position of the mouse marker
-      // document.body.replaceChild(this.mouseMarker, this.mouseMarker)
-      this.mouseMarker.style.top = `${_event.getData()['y']}px`;
-      this.mouseMarker.style.left = `${_event.getData()['x']}px`;
+      this.mouseMarker.style.top =
+          `${_event.getData()['y'] * this.scalingHeight}px`;
+      this.mouseMarker.style.left =
+          `${_event.getData()['x'] * this.scalingWidth}px`;
     } else {
       // Create and add the mouse marker
       this.mouseMarker = this._createDot(
-          _event.getData()['x'],
-          _event.getData()['y'],
+          _event.getData()['x'] * this.scalingWidth,
+          _event.getData()['y'] * this.scalingHeight,
           'red'
       );
       document.body.appendChild(this.mouseMarker);
@@ -210,13 +229,13 @@ export class Player {
 
     // Click the element at the specific point
     (document.elementFromPoint(
-        _event.getData()['x'],
-        _event.getData()['y']) as HTMLElement).click();
+        _event.getData()['x'] * this.scalingWidth,
+        _event.getData()['y'] * this.scalingHeight) as HTMLElement).click();
 
     // Add and store the click indicator
     const clickMarker = this._createDot(
-        _event.getData()['x'],
-        _event.getData()['y'],
+        _event.getData()['x'] * this.scalingWidth,
+        _event.getData()['y'] * this.scalingHeight,
         'blue'
     );
     document.body.appendChild(clickMarker);
