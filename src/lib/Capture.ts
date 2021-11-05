@@ -19,9 +19,6 @@ export class Capture implements Component {
   private startTime: number;
   private endTime: number;
 
-  // Mouse logger
-  private mouseLogger: number;
-
   // Screen related variables
   private resolution: [number, number];
 
@@ -40,8 +37,8 @@ export class Capture implements Component {
     this._setup();
 
     // Record the start time
-    this.startTime = Date.now();
-    console.info(`Data capture started @ ${this.startTime}`);
+    this.startTime = performance.now();
+    console.info(`[Capture] Data capture started after ${this.startTime}ms`);
 
     // Record the screen area dimensions
     this.resolution = [
@@ -57,7 +54,8 @@ export class Capture implements Component {
     this._teardown();
 
     // Record the end time
-    this.endTime = Date.now();
+    this.endTime = performance.now();
+    console.info(`[Capture] Data capture finished after ${this.endTime}ms`);
   }
 
   /**
@@ -149,7 +147,7 @@ export class Capture implements Component {
     // Create hidden link and click it
     const link = document.createElement('a');
     link.style.visibility = 'hidden';
-    link.download = `capture_${Date.now()}.json`;
+    link.download = `capture_${performance.now()}.json`;
     link.href = blobURL;
     link.click();
   }
@@ -177,7 +175,7 @@ export class Capture implements Component {
    */
   private _keyboardEvent(_e: KeyboardEvent) {
     this._logEvent(
-        Date.now() - this.startTime,
+        performance.now() - this.startTime,
         LISTENER.KEYBOARD,
         {
           key: _e.key,
@@ -191,7 +189,7 @@ export class Capture implements Component {
    */
   private _clickEvent(_e: MouseEvent) {
     this._logEvent(
-        Date.now() - this.startTime,
+        performance.now() - this.startTime,
         LISTENER.CLICK,
         {
           x: _e.clientX,
@@ -207,7 +205,7 @@ export class Capture implements Component {
   private _mouseLogger(_e: MouseEvent) {
     // Called on interval
     this._logEvent(
-        Date.now() - this.startTime,
+        performance.now() - this.startTime,
         LISTENER.MOUSE,
         {
           x: _e.pageX,

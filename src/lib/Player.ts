@@ -30,9 +30,10 @@ export class Player implements Component {
   private startTime: number;
 
   // Store any visual playback features
+  private mouseMarker: HTMLElement;
+  private pathMarkers: HTMLElement[];
   private clickMarkers: HTMLElement[];
   private maxMarkers: 10;
-  private mouseMarker: HTMLElement;
 
   /**
    * Default constructor for the Player class.
@@ -102,7 +103,7 @@ export class Player implements Component {
     this.ticks++;
 
     // Calculate the delta
-    const delta = Date.now() - this.startTime;
+    const delta = performance.now() - this.startTime;
 
     // Get and check the most recent event
     if (this.events.length > 0) {
@@ -117,7 +118,7 @@ export class Player implements Component {
         if (this.clickMarkers.length > this.maxMarkers) {
           while (this.clickMarkers.length > this.maxMarkers) {
             const marker = this.clickMarkers.shift();
-            document.body.removeChild(marker);
+            marker.remove();
           }
         }
       }
@@ -131,11 +132,12 @@ export class Player implements Component {
    * Start the Player routine
    */
   public start(): void {
-    this.startTime = Date.now();
-    console.info(`[Player] Playback started @ ${this.startTime}`);
+    this.startTime = performance.now();
+    console.info(`[Player] Playback started after ${this.startTime}ms`);
 
-    // Instantiate the collection of click markers
+    // Instantiate the collection of mouse markers
     this.clickMarkers = [];
+    this.pathMarkers = [];
     this.maxMarkers = 10;
 
     // Store the target
@@ -153,10 +155,25 @@ export class Player implements Component {
   }
 
   /**
+   * Remove markers from the screen
+   */
+  public clean(): void {
+    // Click markers
+    for (const marker of this.clickMarkers) {
+      marker.remove();
+    }
+
+    // Path markers
+    for (const marker of this.pathMarkers) {
+      marker.remove();
+    }
+  }
+
+  /**
    * Halt the Player routine
    */
   public stop() {
-    console.info(`[Player] Playback finished @ ${Date.now()}`);
+    console.info(`[Player] Playback finished after ${performance.now()}ms`);
 
     window.clearInterval(
         this.ticker,
@@ -176,7 +193,7 @@ export class Player implements Component {
     } else if (_event.getType() === 'click') {
       this._clickEvent(_event);
     } else {
-      console.error(`[Event] Unknown event type '${_event.getType()}'`);
+      console.error(`[Player] Unknown event type '${_event.getType()}'`);
     }
   }
 
@@ -185,7 +202,7 @@ export class Player implements Component {
    * @param {PlayerEvent} _event the PlayerEvent to dispatch
    */
   private _keyboardEvent(_event: PlayerEvent) {
-    console.debug(`[Event] Keyboard event @ ${Date.now()}`);
+    console.info(`[Player] Keyboard event @ ${performance.now()}ms`);
 
     // Send the event
     this.target.dispatchEvent(new KeyboardEvent('keydown', {
@@ -209,6 +226,16 @@ export class Player implements Component {
           `${_event.getData()['y'] * this.scalingHeight}px`;
       this.mouseMarker.style.left =
           `${_event.getData()['x'] * this.scalingWidth}px`;
+
+      // Add and store the click indicator
+      const pathMarker = this._createDot(
+          _event.getData()['x'] * this.scalingWidth + 5,
+          _event.getData()['y'] * this.scalingHeight + 5,
+          'black',
+          5
+      );
+      document.body.appendChild(pathMarker);
+      this.pathMarkers.push(pathMarker);
     } else {
       // Create and add the mouse marker
       this.mouseMarker = this._createDot(
@@ -225,7 +252,7 @@ export class Player implements Component {
    * @param {PlayerEvent} _event the PlayerEvent to dispatch
    */
   private _clickEvent(_event: PlayerEvent) {
-    console.debug(`[Event] Click event @ ${Date.now()}`);
+    console.info(`[Player] Click event @ ${performance.now()}ms`);
 
     // Click the element at the specific point
     (document.elementFromPoint(
@@ -247,18 +274,24 @@ export class Player implements Component {
    * @param {number} _x location x
    * @param {number} _y location y
    * @param {string} _fill color
+   * @param {number} _radius radius of the circle
    * @return {HTMLElement}
    */
-  private _createDot(_x: number, _y: number, _fill: string): HTMLElement {
+  private _createDot(
+      _x: number,
+      _y: number,
+      _fill: string,
+      _radius = 15): HTMLElement {
     // Create a dot to represent the click
     const div = document.createElement('div');
     div.style.position = 'absolute';
-    div.style.width = '15px';
-    div.style.height = '15px';
+    div.style.width = `${_radius}px`;
+    div.style.height = `${_radius}px`;
     div.style.top = `${_y}px`;
     div.style.left = `${_x}px`;
     div.style.borderRadius = '50% 50%';
     div.style.background = _fill;
+    div.style.pointerEvents = 'none';
 
     return div;
   }
