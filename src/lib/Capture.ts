@@ -18,6 +18,9 @@ export class Capture {
   private startTime: number;
   private endTime: number;
 
+  // Screen related variables
+  private resolution: [number, number];
+
   /**
    * Default constructor
    */
@@ -35,6 +38,12 @@ export class Capture {
     // Record the start time
     this.startTime = Date.now();
     console.info(`Data capture started @ ${this.startTime}`);
+
+    // Record the screen area dimensions
+    this.resolution = [
+      window.innerWidth,
+      window.innerHeight,
+    ];
   }
 
   /**
@@ -49,13 +58,21 @@ export class Capture {
 
   /**
    * Return the capture window times
-   * @return {number[]}
+   * @return {[number, number]}
    */
-  public captureTime() {
+  public captureTime(): [number, number] {
     return [
       this.startTime,
       this.endTime,
     ];
+  }
+
+  /**
+   * Retrieve the resolution of the display
+   * @return {[number, number]}
+   */
+  public getResolution(): [number, number] {
+    return this.resolution;
   }
 
   /**
@@ -66,7 +83,7 @@ export class Capture {
    */
   private _logEvent(_time: number, _type: string, _data: any) {
     this.data.push(new PlayerEvent({
-      time: Date.now(),
+      time: _time,
       type: _type,
       data: _data,
     }));
@@ -78,13 +95,42 @@ export class Capture {
    */
   private _setup(): void {
     // Setup the keypress and mouse handlers
+    this._createHandler(LISTENER.CLICK);
+    this._createHandler(LISTENER.KEYBOARD);
   }
 
   /**
    * Teardown the keypress and mouse handlers
    */
-  private _teardown() {
-    // Teardown the keypress and mouse handlers
+  private _teardown(): void {
+    // Remove the keypress and mouse event listeners
+    document.body.removeEventListener(
+        'click',
+        this._clickEvent.bind(this)
+    );
+    document.body.removeEventListener(
+        'keydown',
+        this._keyboardEvent.bind(this)
+    );
+
+    // Save the data
+    this._save();
+  }
+
+  /**
+   * Save and download the data in JSON format
+   */
+  private _save() {
+    // Assemble the Blob
+    const blob = new Blob([JSON.stringify(this.data)]);
+    const blobURL = window.URL.createObjectURL(blob);
+
+    // Create hidden link and click it
+    const link = document.createElement('a');
+    link.style.visibility = 'hidden';
+    link.download = `capture_${Date.now()}.json`;
+    link.href = blobURL;
+    link.click();
   }
 
   // ---- Handlers and configuration ----
@@ -94,13 +140,9 @@ export class Capture {
    */
   private _createHandler(_type: string) {
     if (_type === LISTENER.CLICK) {
-      document.body.addEventListener('click', (e) => {
-        this._clickEvent(e, this);
-      });
+      document.body.addEventListener('click', this._clickEvent.bind(this));
     } else if (_type === LISTENER.KEYBOARD) {
-      document.body.addEventListener('keydown', (e) => {
-        this._keyboardEvent(e, this);
-      });
+      document.body.addEventListener('keydown', this._keyboardEvent.bind(this));
     } else {
       console.warn(`Unknown handler type '${_type}'`);
     }
@@ -109,11 +151,10 @@ export class Capture {
   /**
    * Create a new Keyboard event handler
    * @param {KeyboardEvent} _e the KeyboardEvent raised
-   * @param {Capture} _capture the Capture instance
    */
-  private _keyboardEvent(_e: KeyboardEvent, _capture: Capture) {
-    _capture._logEvent(
-        Date.now(),
+  private _keyboardEvent(_e: KeyboardEvent) {
+    this._logEvent(
+        Date.now() - this.startTime,
         LISTENER.KEYBOARD,
         {
           key: _e.key,
@@ -124,11 +165,10 @@ export class Capture {
   /**
    * Create a new Click event handler
    * @param {MouseEvent} _e the PointEvent raised
-   * @param {Capture} _capture the Capture instance
    */
-  private _clickEvent(_e: MouseEvent, _capture: Capture) {
-    _capture._logEvent(
-        Date.now(),
+  private _clickEvent(_e: MouseEvent) {
+    this._logEvent(
+        Date.now() - this.startTime,
         LISTENER.CLICK,
         {
           x: _e.clientX,

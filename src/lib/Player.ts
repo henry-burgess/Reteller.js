@@ -21,6 +21,10 @@ export class Player {
   // Start times
   private startTime: number;
 
+  // Store any visual playback features
+  private clickMarkers: HTMLElement[];
+  private maxMarkers: 10;
+
   /**
    * Default constructor for the Player class.
    * @param {JSON} _data Object containing all the collected data
@@ -90,6 +94,13 @@ export class Player {
         // Pop and perform the event if the time has elapsed
         const _event = new PlayerEvent(player.events.shift());
         player._perform(_event);
+
+        // Clean up any extra markers if required
+        if (player.clickMarkers.length > player.maxMarkers) {
+          while (player.clickMarkers.length > player.maxMarkers) {
+            player.clickMarkers.shift();
+          }
+        }
       }
     } else {
       // Stop playing the game
@@ -103,6 +114,10 @@ export class Player {
   public start(): void {
     this.startTime = Date.now();
     console.info(`[Player] Playback started @ ${this.startTime}`);
+
+    // Instantiate the collection of click markers
+    this.clickMarkers = [];
+    this.maxMarkers = 10;
 
     // Store the target
     // this.target = document.querySelector(this.targetSelector);
@@ -180,5 +195,19 @@ export class Player {
     (document.elementFromPoint(
         _event.getData()['x'],
         _event.getData()['y']) as HTMLElement).click();
+
+    // Create a dot to represent the click
+    const div = document.createElement('div');
+    div.style.position = 'absolute';
+    div.style.width = '15px';
+    div.style.height = '15px';
+    div.style.top = `${_event.getData()['y']}px`;
+    div.style.left = `${_event.getData()['x']}px`;
+    div.style.borderRadius = '50% 50%';
+    div.style.background = 'blue';
+
+    // Add and store the new indicator
+    document.body.appendChild(div);
+    this.clickMarkers.push(div); 
   }
 }
