@@ -18,6 +18,9 @@ export class Capture {
   private startTime: number;
   private endTime: number;
 
+  // Mouse logger
+  private mouseLogger: number;
+
   // Screen related variables
   private resolution: [number, number];
 
@@ -97,6 +100,7 @@ export class Capture {
     // Setup the keypress and mouse handlers
     this._createHandler(LISTENER.CLICK);
     this._createHandler(LISTENER.KEYBOARD);
+    this._createHandler(LISTENER.MOUSE);
   }
 
   /**
@@ -108,9 +112,15 @@ export class Capture {
         'click',
         this._clickEvent.bind(this)
     );
+
     document.body.removeEventListener(
         'keydown',
         this._keyboardEvent.bind(this)
+    );
+
+    document.body.removeEventListener(
+        'mousemove',
+        this._mouseLogger.bind(this)
     );
 
     // Save the data
@@ -122,7 +132,17 @@ export class Capture {
    */
   private _save() {
     // Assemble the Blob
-    const blob = new Blob([JSON.stringify(this.data)]);
+    const blob = new Blob([JSON.stringify(
+        {
+          configuration: {
+            viewport: {
+              width: this.getResolution[0],
+              height: this.getResolution[1],
+            },
+          },
+          events: this.data,
+        }
+    )]);
     const blobURL = window.URL.createObjectURL(blob);
 
     // Create hidden link and click it
@@ -143,6 +163,8 @@ export class Capture {
       document.body.addEventListener('click', this._clickEvent.bind(this));
     } else if (_type === LISTENER.KEYBOARD) {
       document.body.addEventListener('keydown', this._keyboardEvent.bind(this));
+    } else if (_type === LISTENER.MOUSE) {
+      document.body.addEventListener('mousemove', this._mouseLogger.bind(this));
     } else {
       console.warn(`Unknown handler type '${_type}'`);
     }
@@ -179,8 +201,17 @@ export class Capture {
 
   /**
    * Create a new Mouse position logger
+   * @param {MouseEvent} _e the MosueEvent raised
    */
-  private _mouseLogger() {
+  private _mouseLogger(_e: MouseEvent) {
     // Called on interval
+    this._logEvent(
+        Date.now() - this.startTime,
+        LISTENER.MOUSE,
+        {
+          x: _e.pageX,
+          y: _e.pageY,
+        }
+    );
   }
 }

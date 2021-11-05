@@ -24,6 +24,7 @@ export class Player {
   // Store any visual playback features
   private clickMarkers: HTMLElement[];
   private maxMarkers: 10;
+  private mouseMarker: HTMLElement;
 
   /**
    * Default constructor for the Player class.
@@ -78,33 +79,33 @@ export class Player {
 
   /**
    * Method called each tick in the window interval.
-   * @param {Player} player Instance of the Player class
    */
-  private _tick(player: Player) {
-    player.ticks++;
+  private _tick(): void {
+    this.ticks++;
 
     // Calculate the delta
-    const delta = Date.now() - player.startTime;
+    const delta = Date.now() - this.startTime;
 
     // Get and check the most recent event
-    if (player.events.length > 0) {
-      const eventTime = player.events[0]['time'];
+    if (this.events.length > 0) {
+      const eventTime = this.events[0]['time'];
 
       if (eventTime <= delta) {
         // Pop and perform the event if the time has elapsed
-        const _event = new PlayerEvent(player.events.shift());
-        player._perform(_event);
+        const _event = new PlayerEvent(this.events.shift());
+        this._perform(_event);
 
         // Clean up any extra markers if required
-        if (player.clickMarkers.length > player.maxMarkers) {
-          while (player.clickMarkers.length > player.maxMarkers) {
-            player.clickMarkers.shift();
+        if (this.clickMarkers.length > this.maxMarkers) {
+          while (this.clickMarkers.length > this.maxMarkers) {
+            const marker = this.clickMarkers.shift();
+            document.body.removeChild(marker);
           }
         }
       }
     } else {
       // Stop playing the game
-      player.stop();
+      this.stop();
     }
   }
 
@@ -120,8 +121,7 @@ export class Player {
     this.maxMarkers = 10;
 
     // Store the target
-    // this.target = document.querySelector(this.targetSelector);
-    this.target = document.body;
+    this.target = document.querySelector(this.targetSelector);
     if (this.target === null) {
       console.warn(`Target '${this.targetSelector}' not found, ` +
                     `defaulting to 'document.body'`);
@@ -129,9 +129,8 @@ export class Player {
     }
 
     this.ticker = window.setInterval(
-        this._tick,
+        this._tick.bind(this),
         this.rate,
-        this,
     );
   }
 
@@ -172,7 +171,11 @@ export class Player {
 
     // Send the event
     this.target.dispatchEvent(new KeyboardEvent('keydown', {
-      key: _event.getData(),
+      key: _event.getData()['key'],
+    }));
+
+    this.target.dispatchEvent(new KeyboardEvent('keyup', {
+      key: _event.getData()['key'],
     }));
   }
 
@@ -181,7 +184,21 @@ export class Player {
    * @param {PlayerEvent} _event the PlayerEvent to dispatch
    */
   private _mouseEvent(_event: PlayerEvent) {
-    console.debug(`[Event] Mouse movement event @ ${Date.now()}`);
+    // Check if the mouse cursor has been created yet
+    if (this.mouseMarker) {
+      // Update the position of the mouse marker
+      // document.body.replaceChild(this.mouseMarker, this.mouseMarker)
+      this.mouseMarker.style.top = `${_event.getData()['y']}px`;
+      this.mouseMarker.style.left = `${_event.getData()['x']}px`;
+    } else {
+      // Create and add the mouse marker
+      this.mouseMarker = this._createDot(
+          _event.getData()['x'],
+          _event.getData()['y'],
+          'red'
+      );
+      document.body.appendChild(this.mouseMarker);
+    }
   }
 
   /**
@@ -196,18 +213,34 @@ export class Player {
         _event.getData()['x'],
         _event.getData()['y']) as HTMLElement).click();
 
+    // Add and store the click indicator
+    const clickMarker = this._createDot(
+        _event.getData()['x'],
+        _event.getData()['y'],
+        'blue'
+    );
+    document.body.appendChild(clickMarker);
+    this.clickMarkers.push(clickMarker);
+  }
+
+  /**
+   * Create and return a colored dot
+   * @param {number} _x location x
+   * @param {number} _y location y
+   * @param {string} _fill color
+   * @return {HTMLElement}
+   */
+  private _createDot(_x: number, _y: number, _fill: string): HTMLElement {
     // Create a dot to represent the click
     const div = document.createElement('div');
     div.style.position = 'absolute';
     div.style.width = '15px';
     div.style.height = '15px';
-    div.style.top = `${_event.getData()['y']}px`;
-    div.style.left = `${_event.getData()['x']}px`;
+    div.style.top = `${_y}px`;
+    div.style.left = `${_x}px`;
     div.style.borderRadius = '50% 50%';
-    div.style.background = 'blue';
+    div.style.background = _fill;
 
-    // Add and store the new indicator
-    document.body.appendChild(div);
-    this.clickMarkers.push(div); 
+    return div;
   }
 }
