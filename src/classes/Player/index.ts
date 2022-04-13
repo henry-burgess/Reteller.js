@@ -19,7 +19,7 @@ export class Player {
 
   // Target HTMLElement
   private targetSelector: string;
-  private target: HTMLElement;
+  private target: HTMLElement | null;
 
   // Tick and rate
   private rate: number;
@@ -30,7 +30,7 @@ export class Player {
   private startTime = 0;
 
   // Store any visual playback features
-  private mouseMarker: HTMLElement;
+  private mouseMarker: HTMLElement | undefined;
   private pathMarkers: HTMLElement[] = [];
   private clickMarkers: HTMLElement[] = [];
   private maxMarkers = 10;
@@ -47,7 +47,6 @@ export class Player {
   constructor(_data: CaptureData, _rate = 1) {
     // Setup the tick rate
     this.rate = _rate;
-    this.ticks = 0;
 
     // Load and cleanse the data
     this.data = _data;
@@ -71,6 +70,9 @@ export class Player {
       );
       this.target = document.body;
     }
+
+    // Get the target dimensions
+    this.targetDimensions = [this.target.clientWidth, this.target.clientHeight];
   }
 
   /**
@@ -135,24 +137,13 @@ export class Player {
 
     this._scale();
 
-    this._toggle();
-  }
-
-  /**
-   * If the target is the document 'body', we need to unpack it and place
-   * it into a 'div' instead
-   */
-  private _unbox(): void {
-    return;
+    this.ticker = window.setInterval(this._tick.bind(this), this.rate);
   }
 
   /**
    * Scaling of target element
    */
   private _scale(): void {
-    // Get the target dimensions
-    this.targetDimensions = [this.target.clientWidth, this.target.clientHeight];
-
     if (this.targetDimensions[0] > this.captureDimensions[0]) {
       consola.warn(`[Setup] Target larger than original capture screen`);
     } else {
@@ -160,22 +151,10 @@ export class Player {
     }
 
     // Apply scaling
-    this.target.style.width = `${this.captureDimensions[0]}px`;
-    this.target.style.height = `${this.captureDimensions[1]}px`;
-
-    // const scale = Math.min( 
-    //   this.targetDimensions[0] / this.captureDimensions[0], 
-    //   this.targetDimensions[1] / this.captureDimensions[1],
-    // );
-    // consola.info(`Scaling factor:`, scale);
-    // this.target.style.transform = `scale(${scale})`;
-  }
-
-  /**
-   * Toggle on the playback
-   */
-  private _toggle(): void {
-    this.ticker = window.setInterval(this._tick.bind(this), this.rate);
+    if (this.target) {
+      this.target.style.width = `${this.captureDimensions[0]}px`;
+      this.target.style.height = `${this.captureDimensions[1]}px`;
+    }
   }
 
   /**
@@ -255,13 +234,17 @@ export class Player {
       this.mouseMarker.style.left = `${eventData.x}px`;
 
       // Add and store the movement indicator
-      const pathMarker = this._createDot(eventData.x, eventData.y, "black");
-      this.target.appendChild(pathMarker);
-      this.pathMarkers.push(pathMarker);
+      if (this.target) {
+        const pathMarker = this._createDot(eventData.x, eventData.y, "black");
+        this.target.appendChild(pathMarker);
+        this.pathMarkers.push(pathMarker);
+      }
     } else {
       // Create and add the mouse marker
-      this.mouseMarker = this._createDot(eventData.x, eventData.y, "red", 15);
-      this.target.appendChild(this.mouseMarker);
+      if (this.target) {
+        this.mouseMarker = this._createDot(eventData.x, eventData.y, "red", 15);
+        this.target.appendChild(this.mouseMarker);
+      }
     }
   }
 
@@ -276,9 +259,11 @@ export class Player {
     (document.elementFromPoint(eventData.x, eventData.y) as HTMLElement).click();
 
     // Add and store the click indicator
-    const clickMarker = this._createDot(eventData.x, eventData.y, "lime", 10);
-    this.target.appendChild(clickMarker);
-    this.clickMarkers.push(clickMarker);
+    if (this.target){
+      const clickMarker = this._createDot(eventData.x, eventData.y, "lime", 10);
+      this.target.appendChild(clickMarker);
+      this.clickMarkers.push(clickMarker);
+    }
   }
 
   /**
@@ -293,15 +278,15 @@ export class Player {
     _x: number,
     _y: number,
     _fill: string,
-    _radius = 5
+    _radius = 5,
   ): HTMLElement {
     // Create a 'div' to represent the click
     const div = document.createElement("div");
     div.style.position = "absolute";
     div.style.width = `${_radius}px`;
     div.style.height = `${_radius}px`;
-    div.style.top = `${_y}px`;
     div.style.left = `${_x}px`;
+    div.style.top = `${_y}px`;
     div.style.borderRadius = "50% 50%";
     div.style.background = _fill;
     div.style.pointerEvents = "none";

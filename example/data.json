@@ -1,7 +1,7 @@
 {
   "configuration": {
     "viewport": { "width": 1024, "height": 574 },
-    "target": "body"
+    "target": "#experiment"
   },
   "events": [
     {

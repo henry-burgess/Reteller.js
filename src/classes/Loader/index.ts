@@ -5,11 +5,11 @@
 export class Loader {
   /**
    * Default constructor for 'Loader' class
-   * @param {any} _data JSON collection of records to examine
+   * @param {CaptureData} _data JSON collection of records to examine
    * @return {boolean}
    * @class
    */
-  static examine(_data: any): boolean {
+  static examine(_data: CaptureData): boolean {
     return true;
   }
 }

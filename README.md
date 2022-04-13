@@ -2,6 +2,8 @@
 
 A simple, lightweight library to record and replay interactions on a web page, targeting a specific element. Reteller aims to make data capture and data replay as accurate and reproducible as possible while maintaining simplicity and extensibility.
 
+The primary use case of Reteller is JavaScript-based behavioural or cognitive experiments that require input from participants. It allows researchers to view, in real time, exactly what participants observed and how they responded.
+
 ## Features
 
 ### Data capture 🎥
@@ -21,9 +23,13 @@ Aside from capturing data, Reteller can replay existing data. Using the `Player`
 
 ## Usage
 
+It is strongly advised to use a tool such as [Parcel](https://parceljs.org) to bundle and serve the tool alongside another .
+
 ### Installation
 
-Use NPM or Yarn:
+Reteller is still in early development stages and is not yet available on package managers.
+
+<!-- Use NPM or Yarn:
 
 ```bash
 $ npm install --save reteller.js
@@ -33,20 +39,41 @@ $ npm install --save reteller.js
 ```bash
 $ yarn add reteller.js
 ...
-```
+``` -->
 
 ### `Capture`
 
-Import the `Capture` class:
+Import the `Capture` class and create a new instance:
 
 ```JavaScript
 import { Capture } from 'reteller.js';
+
+const capture = new Capture();
 ```
+
+Start and end the capture as required:
+
+```JavaScript
+capture.start();
+// ...
+capture.stop();
+```
+
+A JSON file containing the captured data will be automatically downloaded.
 
 ### `Player`
 
-Import the `Player` class:
+Import the `Player` class and import JSON data to be replayed:
 
 ```JavaScript
 import { Player } from 'reteller.js';
+import * as data from './data.json';
+```
+
+Create an instance of the `Player` class with the JSON data:
+
+```JavaScript
+const player = new Player(data);
+
+player.start(); // Start the player
 ```
