@@ -12,7 +12,7 @@ export class PlayerEvent {
    * @param {any} _event type of event loaded
    * from the data
    */
-  constructor(_event: {time: number, type: string, data: any}) {
+  constructor(_event: { time: number; type: string; data: any }) {
     this.time = _event.time;
     this.type = _event.type;
     this.data = _event.data;

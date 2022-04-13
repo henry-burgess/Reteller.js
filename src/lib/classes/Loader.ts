@@ -1,5 +1,3 @@
 export class Loader {
-  constructor() {
-    
-  }
+  constructor() {}
 }

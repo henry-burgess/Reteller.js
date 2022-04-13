@@ -1,21 +1,22 @@
-import {PlayerEvent} from './classes/PlayerEvent';
-import {Component} from './interfaces/Component';
+// Classes
+import { PlayerEvent } from "./classes/PlayerEvent";
+import { Component } from "./interfaces/Component";
+
+// Logging library
+import consola from "consola";
 
 /**
- * Player class for running the re-enactment
+ * @summary Player class for running the re-enactment
  */
 export class Player implements Component {
   // Data
   private data: JSON;
   private configuration: any;
   private events: any[];
-  private location: string;
 
   // Rescaling
-  private captureResolution: [number, number];
-  private playerResolution: [number, number];
-  private scalingWidth: number;
-  private scalingHeight: number;
+  private captureDimensions: [number, number];
+  private targetDimensions: [number, number];
 
   // Target HTMLElement
   private targetSelector: string;
@@ -39,23 +40,21 @@ export class Player implements Component {
    * Default constructor for the Player class.
    * @param {any} _data Object containing all the collected data
    * used to replay the participant actions
-   * @param {string} _targetSelector CSS selector of the target
    * @param {number} _rate Tick rate to use for performing the actions.
    * Measured using milliseconds. Default is 1 millisecond tick
    * interval.
+   * @class
    */
-  constructor(_data: any, _targetSelector: string, _rate=1) {
+  constructor(_data: any, _rate = 1) {
     // Setup the tick rate
     this.rate = _rate;
     this.ticks = 0;
 
-    // Store the target selector
-    this.targetSelector = _targetSelector;
-
     // Load and cleanse the data
     this.data = _data;
-    this.configuration = this.data['configuration'];
-    this.events = this.data['events'];
+    this.configuration = this.data["configuration"];
+    this.events = this.data["events"];
+    this.targetSelector = this.configuration["target"];
     this._cleanse();
 
     // General setup of screen and layout
@@ -67,20 +66,20 @@ export class Player implements Component {
    */
   private _setup(): void {
     // Get the capture dimensions
-    this.captureResolution = [
-      this.configuration['viewport']['width'],
-      this.configuration['viewport']['height'],
+    this.captureDimensions = [
+      this.configuration["viewport"]["width"],
+      this.configuration["viewport"]["height"],
     ];
 
-    // Get the player dimensions
-    this.playerResolution = [
-      window.innerWidth,
-      window.innerHeight,
-    ];
-
-    // Calculate and store the scaling width and height
-    this.scalingWidth = this.playerResolution[0] / this.captureResolution[0];
-    this.scalingHeight = this.playerResolution[1] / this.captureResolution[1];
+    // Store the target
+    this.target = document.querySelector(this.targetSelector);
+    if (this.target === null) {
+      consola.warn(
+        `Target '${this.targetSelector}' not found, ` +
+          `defaulting to 'document.body'`
+      );
+      this.target = document.body;
+    }
   }
 
   /**
@@ -91,8 +90,8 @@ export class Player implements Component {
     // Normalise timing information to round down to nearest millisecond
     for (let i = 0; i < this.events.length; i++) {
       const event = this.events[i];
-      const timestamp = event['time'];
-      event['time'] = Math.round(timestamp);
+      const timestamp = event["time"];
+      event["time"] = Math.round(timestamp);
     }
   }
 
@@ -107,7 +106,7 @@ export class Player implements Component {
 
     // Get and check the most recent event
     if (this.events.length > 0) {
-      const eventTime = this.events[0]['time'];
+      const eventTime = this.events[0]["time"];
 
       if (eventTime <= delta) {
         // Pop and perform the event if the time has elapsed
@@ -133,25 +132,27 @@ export class Player implements Component {
    */
   public start(): void {
     this.startTime = performance.now();
-    console.info(`[Player] Playback started after ${this.startTime}ms`);
+    consola.info(`[Player] Playback started after ${this.startTime}ms`);
 
     // Instantiate the collection of mouse markers
     this.clickMarkers = [];
     this.pathMarkers = [];
     this.maxMarkers = 10;
 
-    // Store the target
-    this.target = document.querySelector(this.targetSelector);
-    if (this.target === null) {
-      console.warn(`Target '${this.targetSelector}' not found, ` +
-                    `defaulting to 'document.body'`);
-      this.target = document.body;
+    // Get the target dimensions
+    this.targetDimensions = [this.target.clientWidth, this.target.clientHeight];
+
+    if (this.targetDimensions[0] > this.captureDimensions[0]) {
+      consola.warn(`[Setup] Target larger than original capture screen`);
+    } else {
+      consola.info(`[Setup] Target smaller than original capture screen`);
     }
 
-    this.ticker = window.setInterval(
-        this._tick.bind(this),
-        this.rate,
-    );
+    // Apply scaling
+    this.target.style.width = `${this.captureDimensions[0]}px`;
+    this.target.style.height = `${this.captureDimensions[1]}px`;
+
+    this.ticker = window.setInterval(this._tick.bind(this), this.rate);
   }
 
   /**
@@ -173,11 +174,9 @@ export class Player implements Component {
    * Halt the Player routine
    */
   public stop() {
-    console.info(`[Player] Playback finished after ${performance.now()}ms`);
+    consola.info(`[Player] Playback finished after ${performance.now()}ms`);
 
-    window.clearInterval(
-        this.ticker,
-    );
+    window.clearInterval(this.ticker);
   }
 
   /**
@@ -186,14 +185,14 @@ export class Player implements Component {
    * @param {PlayerEvent} _event the PlayerEvent to dispatch
    */
   private _perform(_event: PlayerEvent) {
-    if (_event.getType() === 'keyboard') {
+    if (_event.getType() === "keyboard") {
       this._keyboardEvent(_event);
-    } else if (_event.getType() === 'mouse') {
+    } else if (_event.getType() === "mouse") {
       this._mouseEvent(_event);
-    } else if (_event.getType() === 'click') {
+    } else if (_event.getType() === "click") {
       this._clickEvent(_event);
     } else {
-      console.error(`[Player] Unknown event type '${_event.getType()}'`);
+      consola.error(`[Player] Unknown event type '${_event.getType()}'`);
     }
   }
 
@@ -202,16 +201,20 @@ export class Player implements Component {
    * @param {PlayerEvent} _event the PlayerEvent to dispatch
    */
   private _keyboardEvent(_event: PlayerEvent) {
-    console.info(`[Player] Keyboard event @ ${performance.now()}ms`);
+    consola.info(`[Player] Keyboard event @ ${performance.now()}ms`);
 
     // Send the event
-    this.target.dispatchEvent(new KeyboardEvent('keydown', {
-      key: _event.getData()['key'],
-    }));
+    this.target.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: _event.getData()["key"],
+      })
+    );
 
-    this.target.dispatchEvent(new KeyboardEvent('keyup', {
-      key: _event.getData()['key'],
-    }));
+    this.target.dispatchEvent(
+      new KeyboardEvent("keyup", {
+        key: _event.getData()["key"],
+      })
+    );
   }
 
   /**
@@ -222,26 +225,24 @@ export class Player implements Component {
     // Check if the mouse cursor has been created yet
     if (this.mouseMarker) {
       // Update the position of the mouse marker
-      this.mouseMarker.style.top =
-          `${_event.getData()['y'] * this.scalingHeight}px`;
-      this.mouseMarker.style.left =
-          `${_event.getData()['x'] * this.scalingWidth}px`;
+      this.mouseMarker.style.top = `${_event.getData()["y"]}px`;
+      this.mouseMarker.style.left = `${_event.getData()["x"]}px`;
 
       // Add and store the click indicator
       const pathMarker = this._createDot(
-          _event.getData()['x'] * this.scalingWidth + 5,
-          _event.getData()['y'] * this.scalingHeight + 5,
-          'black',
-          5
+        _event.getData()["x"] + 5,
+        _event.getData()["y"] + 5,
+        "black",
+        5
       );
       document.body.appendChild(pathMarker);
       this.pathMarkers.push(pathMarker);
     } else {
       // Create and add the mouse marker
       this.mouseMarker = this._createDot(
-          _event.getData()['x'] * this.scalingWidth,
-          _event.getData()['y'] * this.scalingHeight,
-          'red'
+        _event.getData()["x"],
+        _event.getData()["y"],
+        "red"
       );
       document.body.appendChild(this.mouseMarker);
     }
@@ -252,18 +253,19 @@ export class Player implements Component {
    * @param {PlayerEvent} _event the PlayerEvent to dispatch
    */
   private _clickEvent(_event: PlayerEvent) {
-    console.info(`[Player] Click event @ ${performance.now()}ms`);
-
     // Click the element at the specific point
-    (document.elementFromPoint(
-        _event.getData()['x'] * this.scalingWidth,
-        _event.getData()['y'] * this.scalingHeight) as HTMLElement).click();
+    (
+      document.elementFromPoint(
+        _event.getData()["x"],
+        _event.getData()["y"]
+      ) as HTMLElement
+    ).click();
 
     // Add and store the click indicator
     const clickMarker = this._createDot(
-        _event.getData()['x'] * this.scalingWidth,
-        _event.getData()['y'] * this.scalingHeight,
-        'blue'
+      _event.getData()["x"],
+      _event.getData()["y"],
+      "blue"
     );
     document.body.appendChild(clickMarker);
     this.clickMarkers.push(clickMarker);
@@ -278,20 +280,21 @@ export class Player implements Component {
    * @return {HTMLElement}
    */
   private _createDot(
-      _x: number,
-      _y: number,
-      _fill: string,
-      _radius = 15): HTMLElement {
+    _x: number,
+    _y: number,
+    _fill: string,
+    _radius = 15
+  ): HTMLElement {
     // Create a dot to represent the click
-    const div = document.createElement('div');
-    div.style.position = 'absolute';
+    const div = document.createElement("div");
+    div.style.position = "absolute";
     div.style.width = `${_radius}px`;
     div.style.height = `${_radius}px`;
     div.style.top = `${_y}px`;
     div.style.left = `${_x}px`;
-    div.style.borderRadius = '50% 50%';
+    div.style.borderRadius = "50% 50%";
     div.style.background = _fill;
-    div.style.pointerEvents = 'none';
+    div.style.pointerEvents = "none";
 
     return div;
   }

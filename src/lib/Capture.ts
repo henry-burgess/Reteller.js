@@ -1,19 +1,27 @@
-import {PlayerEvent} from './classes/PlayerEvent';
-import {Component} from './interfaces/Component';
+// Classes
+import { PlayerEvent } from "./classes/PlayerEvent";
+import { Component } from "./interfaces/Component";
 
-const LISTENER = {
-  KEYBOARD: 'keyboard',
-  MOUSE: 'mouse',
-  CLICK: 'click',
-};
+// Logging library
+import consola from "consola";
+
+enum Listeners {
+  Keyboard = "keyboard",
+  Mouse = "mouse",
+  Click = "click",
+}
 
 /**
- * Capture class that handles data capturing
+ * @summary Capture class that handles data capturing
  * and storage
  */
 export class Capture implements Component {
   // Data storage target
   private data: PlayerEvent[];
+
+  // Target
+  private targetSelector: string;
+  private target: HTMLElement;
 
   // Date information
   private startTime: number;
@@ -24,9 +32,23 @@ export class Capture implements Component {
 
   /**
    * Default constructor
+   * @param {string} _targetSelector optional CSS selector of target element
+   * to observe
+   * @class
    */
-  constructor() {
+  constructor(_targetSelector = "body") {
     this.data = [];
+    this.targetSelector = _targetSelector;
+
+    // Store the target
+    this.target = document.querySelector(this.targetSelector);
+    if (this.target === null) {
+      consola.warn(
+        `Target '${this.targetSelector}' not found, ` +
+          `defaulting to 'document.body'`
+      );
+      this.target = document.body;
+    }
   }
 
   // ---- Public methods for start and stop ----
@@ -38,13 +60,10 @@ export class Capture implements Component {
 
     // Record the start time
     this.startTime = performance.now();
-    console.info(`[Capture] Data capture started after ${this.startTime}ms`);
+    consola.info(`[Capture] Data capture started after ${this.startTime}ms`);
 
     // Record the screen area dimensions
-    this.resolution = [
-      window.innerWidth,
-      window.innerHeight,
-    ];
+    this.resolution = [this.target.clientWidth, this.target.clientHeight];
   }
 
   /**
@@ -55,7 +74,7 @@ export class Capture implements Component {
 
     // Record the end time
     this.endTime = performance.now();
-    console.info(`[Capture] Data capture finished after ${this.endTime}ms`);
+    consola.info(`[Capture] Data capture finished after ${this.endTime}ms`);
   }
 
   /**
@@ -63,10 +82,7 @@ export class Capture implements Component {
    * @return {[number, number]}
    */
   public captureTime(): [number, number] {
-    return [
-      this.startTime,
-      this.endTime,
-    ];
+    return [this.startTime, this.endTime];
   }
 
   /**
@@ -84,11 +100,13 @@ export class Capture implements Component {
    * @param {any} _data event data
    */
   private _logEvent(_time: number, _type: string, _data: any) {
-    this.data.push(new PlayerEvent({
-      time: _time,
-      type: _type,
-      data: _data,
-    }));
+    this.data.push(
+      new PlayerEvent({
+        time: _time,
+        type: _type,
+        data: _data,
+      })
+    );
   }
 
   // ---- Setup and teardown methods ----
@@ -97,9 +115,9 @@ export class Capture implements Component {
    */
   private _setup(): void {
     // Setup the keypress and mouse handlers
-    this._createHandler(LISTENER.CLICK);
-    this._createHandler(LISTENER.KEYBOARD);
-    this._createHandler(LISTENER.MOUSE);
+    this._createHandler(Listeners.Click);
+    this._createHandler(Listeners.Keyboard);
+    this._createHandler(Listeners.Mouse);
   }
 
   /**
@@ -107,19 +125,16 @@ export class Capture implements Component {
    */
   private _teardown(): void {
     // Remove the keypress and mouse event listeners
+    document.body.removeEventListener("click", this._clickEvent.bind(this));
+
     document.body.removeEventListener(
-        'click',
-        this._clickEvent.bind(this)
+      "keydown",
+      this._keyboardEvent.bind(this)
     );
 
     document.body.removeEventListener(
-        'keydown',
-        this._keyboardEvent.bind(this)
-    );
-
-    document.body.removeEventListener(
-        'mousemove',
-        this._mouseLogger.bind(this)
+      "mousemove",
+      this._mouseLogger.bind(this)
     );
 
     // Save the data
@@ -131,22 +146,23 @@ export class Capture implements Component {
    */
   private _save() {
     // Assemble the Blob
-    const blob = new Blob([JSON.stringify(
-        {
-          configuration: {
-            viewport: {
-              width: this.getResolution()[0],
-              height: this.getResolution()[1],
-            },
+    const blob = new Blob([
+      JSON.stringify({
+        configuration: {
+          viewport: {
+            width: this.getResolution()[0],
+            height: this.getResolution()[1],
           },
-          events: this.data,
-        }
-    )]);
+          target: this.targetSelector,
+        },
+        events: this.data,
+      }),
+    ]);
     const blobURL = window.URL.createObjectURL(blob);
 
     // Create hidden link and click it
-    const link = document.createElement('a');
-    link.style.visibility = 'hidden';
+    const link = document.createElement("a");
+    link.style.visibility = "hidden";
     link.download = `capture_${performance.now()}.json`;
     link.href = blobURL;
     link.click();
@@ -155,17 +171,17 @@ export class Capture implements Component {
   // ---- Handlers and configuration ----
   /**
    * Create a handler of a specific type of event
-   * @param {string} _type the type of handler
+   * @param {Listeners} _type the type of handler
    */
-  private _createHandler(_type: string) {
-    if (_type === LISTENER.CLICK) {
-      document.body.addEventListener('click', this._clickEvent.bind(this));
-    } else if (_type === LISTENER.KEYBOARD) {
-      document.body.addEventListener('keydown', this._keyboardEvent.bind(this));
-    } else if (_type === LISTENER.MOUSE) {
-      document.body.addEventListener('mousemove', this._mouseLogger.bind(this));
+  private _createHandler(_type: Listeners) {
+    if (_type === Listeners.Click) {
+      document.body.addEventListener("click", this._clickEvent.bind(this));
+    } else if (_type === Listeners.Keyboard) {
+      document.body.addEventListener("keydown", this._keyboardEvent.bind(this));
+    } else if (_type === Listeners.Mouse) {
+      document.body.addEventListener("mousemove", this._mouseLogger.bind(this));
     } else {
-      console.warn(`Unknown handler type '${_type}'`);
+      consola.warn(`Unknown handler type '${_type}'`);
     }
   }
 
@@ -174,13 +190,9 @@ export class Capture implements Component {
    * @param {KeyboardEvent} _e the KeyboardEvent raised
    */
   private _keyboardEvent(_e: KeyboardEvent) {
-    this._logEvent(
-        performance.now() - this.startTime,
-        LISTENER.KEYBOARD,
-        {
-          key: _e.key,
-        }
-    );
+    this._logEvent(performance.now() - this.startTime, Listeners.Keyboard, {
+      key: _e.key,
+    });
   }
 
   /**
@@ -188,14 +200,10 @@ export class Capture implements Component {
    * @param {MouseEvent} _e the PointEvent raised
    */
   private _clickEvent(_e: MouseEvent) {
-    this._logEvent(
-        performance.now() - this.startTime,
-        LISTENER.CLICK,
-        {
-          x: _e.clientX,
-          y: _e.clientY,
-        }
-    );
+    this._logEvent(performance.now() - this.startTime, Listeners.Click, {
+      x: _e.pageX,
+      y: _e.pageY,
+    });
   }
 
   /**
@@ -204,13 +212,9 @@ export class Capture implements Component {
    */
   private _mouseLogger(_e: MouseEvent) {
     // Called on interval
-    this._logEvent(
-        performance.now() - this.startTime,
-        LISTENER.MOUSE,
-        {
-          x: _e.pageX,
-          y: _e.pageY,
-        }
-    );
+    this._logEvent(performance.now() - this.startTime, Listeners.Mouse, {
+      x: _e.pageX,
+      y: _e.pageY,
+    });
   }
 }
