@@ -10,8 +10,8 @@ import consola from "consola";
 export class Player {
   // Data
   private data: CaptureData;
-  private configuration: CaptureData["configuration"];
-  private events: CaptureData["events"];
+  private configuration: CaptureConfiguration;
+  private events: CaptureEvent[];
 
   // Rescaling
   private captureDimensions: [number, number];
@@ -23,17 +23,17 @@ export class Player {
 
   // Tick and rate
   private rate: number;
-  private ticks: 0;
-  private ticker: number;
+  private ticks = 0;
+  private ticker = 0;
 
   // Start times
-  private startTime: number;
+  private startTime = 0;
 
   // Store any visual playback features
   private mouseMarker: HTMLElement;
-  private pathMarkers: HTMLElement[];
-  private clickMarkers: HTMLElement[];
-  private maxMarkers: 10;
+  private pathMarkers: HTMLElement[] = [];
+  private clickMarkers: HTMLElement[] = [];
+  private maxMarkers = 10;
 
   /**
    * Default constructor for the Player class.
@@ -57,17 +57,9 @@ export class Player {
     this._cleanse();
 
     // General setup of screen and layout
-    this._setup();
-  }
-
-  /**
-   * Conduct any required setup
-   */
-  private _setup(): void {
-    // Get the capture dimensions
     this.captureDimensions = [
-      this.configuration["viewport"]["width"],
-      this.configuration["viewport"]["height"],
+      this.configuration.viewport.width,
+      this.configuration.viewport.height,
     ];
 
     // Store the target
@@ -108,15 +100,18 @@ export class Player {
       const eventTime = this.events[0]["time"];
 
       if (eventTime <= delta) {
-        // Pop and perform the event if the time has elapsed
-        const _event = new PlayerEvent(this.events.shift());
-        this._perform(_event);
+        // Pop and perform the event if the time has elapsed'
+        const nextEvent = this.events.shift();
+        if (nextEvent) {
+          const _event = new PlayerEvent(nextEvent);
+          this._perform(_event);
+        }
 
         // Clean up any extra markers if required
         if (this.clickMarkers.length > this.maxMarkers) {
           while (this.clickMarkers.length > this.maxMarkers) {
             const marker = this.clickMarkers.shift();
-            marker.remove();
+            if (marker) marker.remove();
           }
         }
       }
@@ -138,6 +133,23 @@ export class Player {
     this.pathMarkers = [];
     this.maxMarkers = 10;
 
+    this._scale();
+
+    this._toggle();
+  }
+
+  /**
+   * If the target is the document 'body', we need to unpack it and place
+   * it into a 'div' instead
+   */
+  private _unbox(): void {
+    return;
+  }
+
+  /**
+   * Scaling of target element
+   */
+  private _scale(): void {
     // Get the target dimensions
     this.targetDimensions = [this.target.clientWidth, this.target.clientHeight];
 
@@ -151,9 +163,18 @@ export class Player {
     this.target.style.width = `${this.captureDimensions[0]}px`;
     this.target.style.height = `${this.captureDimensions[1]}px`;
 
-    // Apply border to target
-    this.target.style.border = "solid";
+    // const scale = Math.min( 
+    //   this.targetDimensions[0] / this.captureDimensions[0], 
+    //   this.targetDimensions[1] / this.captureDimensions[1],
+    // );
+    // consola.info(`Scaling factor:`, scale);
+    // this.target.style.transform = `scale(${scale})`;
+  }
 
+  /**
+   * Toggle on the playback
+   */
+  private _toggle(): void {
     this.ticker = window.setInterval(this._tick.bind(this), this.rate);
   }
 
@@ -177,7 +198,6 @@ export class Player {
    */
   public stop() {
     consola.info(`[Player] Playback finished after ${performance.now()}ms`);
-
     window.clearInterval(this.ticker);
   }
 
@@ -203,20 +223,23 @@ export class Player {
    * @param {PlayerEvent} _event the PlayerEvent to dispatch
    */
   private _keyboardEvent(_event: PlayerEvent) {
+    const eventData = _event.getData() as KeyData;
     consola.info(`[Player] Keyboard event @ ${performance.now()}ms`);
 
     // Send the event
-    this.target.dispatchEvent(
-      new KeyboardEvent("keydown", {
-        key: _event.getData()["key"],
-      })
-    );
-
-    this.target.dispatchEvent(
-      new KeyboardEvent("keyup", {
-        key: _event.getData()["key"],
-      })
-    );
+    if (this.target) {
+      this.target.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: eventData.key,
+        })
+      );
+  
+      this.target.dispatchEvent(
+        new KeyboardEvent("keyup", {
+          key: eventData.key,
+        })
+      );
+    }
   }
 
   /**
@@ -224,29 +247,21 @@ export class Player {
    * @param {PlayerEvent} _event the PlayerEvent to dispatch
    */
   private _mouseEvent(_event: PlayerEvent) {
+    const eventData = _event.getData() as CoordinateData;
     // Check if the mouse cursor has been created yet
     if (this.mouseMarker) {
       // Update the position of the mouse marker
-      this.mouseMarker.style.top = `${_event.getData()["y"]}px`;
-      this.mouseMarker.style.left = `${_event.getData()["x"]}px`;
+      this.mouseMarker.style.top = `${eventData.y}px`;
+      this.mouseMarker.style.left = `${eventData.x}px`;
 
-      // Add and store the click indicator
-      const pathMarker = this._createDot(
-        _event.getData()["x"] + 5,
-        _event.getData()["y"] + 5,
-        "black",
-        5
-      );
-      document.body.appendChild(pathMarker);
+      // Add and store the movement indicator
+      const pathMarker = this._createDot(eventData.x, eventData.y, "black");
+      this.target.appendChild(pathMarker);
       this.pathMarkers.push(pathMarker);
     } else {
       // Create and add the mouse marker
-      this.mouseMarker = this._createDot(
-        _event.getData()["x"],
-        _event.getData()["y"],
-        "red"
-      );
-      document.body.appendChild(this.mouseMarker);
+      this.mouseMarker = this._createDot(eventData.x, eventData.y, "red", 15);
+      this.target.appendChild(this.mouseMarker);
     }
   }
 
@@ -255,21 +270,14 @@ export class Player {
    * @param {PlayerEvent} _event the PlayerEvent to dispatch
    */
   private _clickEvent(_event: PlayerEvent) {
+    const eventData = _event.getData() as CoordinateData;
+
     // Click the element at the specific point
-    (
-      document.elementFromPoint(
-        _event.getData()["x"],
-        _event.getData()["y"]
-      ) as HTMLElement
-    ).click();
+    (document.elementFromPoint(eventData.x, eventData.y) as HTMLElement).click();
 
     // Add and store the click indicator
-    const clickMarker = this._createDot(
-      _event.getData()["x"],
-      _event.getData()["y"],
-      "blue"
-    );
-    document.body.appendChild(clickMarker);
+    const clickMarker = this._createDot(eventData.x, eventData.y, "lime", 10);
+    this.target.appendChild(clickMarker);
     this.clickMarkers.push(clickMarker);
   }
 
@@ -285,9 +293,9 @@ export class Player {
     _x: number,
     _y: number,
     _fill: string,
-    _radius = 15
+    _radius = 5
   ): HTMLElement {
-    // Create a dot to represent the click
+    // Create a 'div' to represent the click
     const div = document.createElement("div");
     div.style.position = "absolute";
     div.style.width = `${_radius}px`;

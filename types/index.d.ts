@@ -7,15 +7,23 @@ declare enum Listeners {
 
 // Format of the JSON data collected by the
 declare type CaptureData = {
-  configuration: {
-    viewport: {
-      width: number;
-      height: number;
-    };
-    target: string;
-  };
-  events: [{ time: number; type: Listeners; data: CoordinateData | KeyData }];
+  configuration: CaptureConfiguration;
+  events: CaptureEvent[];
 };
+
+declare type CaptureConfiguration = {
+  viewport: {
+    width: number;
+    height: number;
+  };
+  target: string;
+}
+
+declare type CaptureEvent = {
+  time: number;
+  type: Listeners;
+  data: CoordinateData | KeyData;
+}
 
 // Coordinates associated with mouse position and click position
 declare type CoordinateData = {

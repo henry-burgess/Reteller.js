@@ -5,14 +5,14 @@
 export class PlayerEvent {
   private time: number;
   private type: string;
-  private data: any;
+  private data: CoordinateData | KeyData;
 
   /**
    * Default constructor
-   * @param {any} _event type of event loaded
+   * @param {CaptureEvent} _event type of event loaded
    * from the data
    */
-  constructor(_event: { time: number; type: string; data: any }) {
+  constructor(_event: CaptureEvent) {
     this.time = _event.time;
     this.type = _event.type;
     this.data = _event.data;
@@ -36,9 +36,9 @@ export class PlayerEvent {
 
   /**
    * Get any data associated with the event
-   * @return {any}
+   * @return {CoordinateData | KeyData}
    */
-  public getData(): any {
+  public getData(): CoordinateData | KeyData {
     return this.data;
   }
 }

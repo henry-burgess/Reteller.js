@@ -14,7 +14,7 @@ export class Capture {
 
   // Target
   private targetSelector: string;
-  private target: HTMLElement;
+  private target: HTMLElement | null;
 
   // Date information
   private startTime: number;
@@ -42,6 +42,13 @@ export class Capture {
       );
       this.target = document.body;
     }
+
+    // Initial timing values
+    this.startTime = -1;
+    this.endTime = -1;
+
+    // Intitial resolution measurement
+    this.resolution = [window.innerWidth, window.innerHeight];
   }
 
   // ---- Public methods for start and stop ----
@@ -56,7 +63,9 @@ export class Capture {
     consola.info(`[Capture] Data capture started after ${this.startTime}ms`);
 
     // Record the screen area dimensions
-    this.resolution = [this.target.clientWidth, this.target.clientHeight];
+    if (this.target !== null) {
+      this.resolution = [this.target.clientWidth, this.target.clientHeight];
+    }
   }
 
   /**
@@ -89,10 +98,10 @@ export class Capture {
   /**
    * Log and store a new event
    * @param {number} _time event time
-   * @param {string} _type event type
+   * @param {Listeners} _type event type
    * @param {any} _data event data
    */
-  private _logEvent(_time: number, _type: string, _data: any) {
+  private _logEvent(_time: number, _type: Listeners, _data: CoordinateData | KeyData) {
     this.data.push(
       new PlayerEvent({
         time: _time,
