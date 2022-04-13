@@ -1,5 +1,5 @@
 // Imports
-import { Capture } from "./lib/Capture";
-import { Player } from "./lib/Player";
+import { Capture } from "./classes/Capture";
+import { Player } from "./classes/Player";
 
 export { Capture, Player };

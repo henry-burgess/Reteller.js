@@ -1,6 +1,5 @@
 // Classes
-import { PlayerEvent } from "./classes/PlayerEvent";
-import { Component } from "./interfaces/Component";
+import { PlayerEvent } from "../PlayerEvent";
 
 // Logging library
 import consola from "consola";
@@ -15,7 +14,7 @@ enum Listeners {
  * @summary Capture class that handles data capturing
  * and storage
  */
-export class Capture implements Component {
+export class Capture {
   // Data storage target
   private data: PlayerEvent[];
 

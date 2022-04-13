@@ -16,6 +16,6 @@ module.exports = {
     "eslint:recommended",
     "google",
     "plugin:@typescript-eslint/recommended",
-    "prettier"
+    "prettier",
   ],
 };

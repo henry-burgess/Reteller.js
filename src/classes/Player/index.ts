@@ -1,6 +1,5 @@
 // Classes
-import { PlayerEvent } from "./classes/PlayerEvent";
-import { Component } from "./interfaces/Component";
+import { PlayerEvent } from "../PlayerEvent";
 
 // Logging library
 import consola from "consola";
@@ -8,7 +7,7 @@ import consola from "consola";
 /**
  * @summary Player class for running the re-enactment
  */
-export class Player implements Component {
+export class Player {
   // Data
   private data: JSON;
   private configuration: any;
@@ -151,6 +150,9 @@ export class Player implements Component {
     // Apply scaling
     this.target.style.width = `${this.captureDimensions[0]}px`;
     this.target.style.height = `${this.captureDimensions[1]}px`;
+
+    // Apply border to target
+    this.target.style.border = "solid";
 
     this.ticker = window.setInterval(this._tick.bind(this), this.rate);
   }
