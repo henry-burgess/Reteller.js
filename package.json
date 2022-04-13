@@ -1,8 +1,8 @@
 {
-  "name": "reenact",
+  "name": "reteller",
   "version": "1.0.0",
   "description": "A library used to record and then replay participant interaction with an online behavioral experiment.",
-  "repository": "https://henry-burgess@github.com/henry-burgess/reenact.git",
+  "repository": "https://henry-burgess@github.com/henry-burgess/reteller.git",
   "author": "Henry Burgess <henryjburg@gmail.com>",
   "license": "MIT",
   "main": "dist/index.js",

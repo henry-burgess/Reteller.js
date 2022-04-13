@@ -4,12 +4,6 @@ import { PlayerEvent } from "../PlayerEvent";
 // Logging library
 import consola from "consola";
 
-enum Listeners {
-  Keyboard = "keyboard",
-  Mouse = "mouse",
-  Click = "click",
-}
-
 /**
  * @summary Capture class that handles data capturing
  * and storage

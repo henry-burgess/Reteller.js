@@ -9,7 +9,7 @@ import consola from "consola";
  */
 export class Player {
   // Data
-  private data: JSON;
+  private data: any;
   private configuration: any;
   private events: any[];
 
@@ -37,7 +37,7 @@ export class Player {
 
   /**
    * Default constructor for the Player class.
-   * @param {any} _data Object containing all the collected data
+   * @param {string} _data Object containing all the collected data
    * used to replay the participant actions
    * @param {number} _rate Tick rate to use for performing the actions.
    * Measured using milliseconds. Default is 1 millisecond tick
