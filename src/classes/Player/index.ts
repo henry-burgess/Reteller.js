@@ -9,9 +9,9 @@ import consola from "consola";
  */
 export class Player {
   // Data
-  private data: any;
-  private configuration: any;
-  private events: any[];
+  private data: CaptureData;
+  private configuration: CaptureData["configuration"];
+  private events: CaptureData["events"];
 
   // Rescaling
   private captureDimensions: [number, number];
@@ -44,7 +44,7 @@ export class Player {
    * interval.
    * @class
    */
-  constructor(_data: any, _rate = 1) {
+  constructor(_data: CaptureData, _rate = 1) {
     // Setup the tick rate
     this.rate = _rate;
     this.ticks = 0;

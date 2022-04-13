@@ -6,7 +6,7 @@ declare enum Listeners {
 }
 
 // Format of the JSON data collected by the
-declare type CollectedData = {
+declare type CaptureData = {
   configuration: {
     viewport: {
       width: number;
