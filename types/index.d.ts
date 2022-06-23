@@ -1,9 +1,5 @@
 // Valid listeners for the replay library
-declare enum Listeners {
-  Keyboard = "keyboard",
-  Mouse = "mouse",
-  Click = "click",
-}
+declare type Listener = "keyboard" | "mouse" | "click";
 
 // Format of the JSON data collected by the
 declare type CaptureData = {
@@ -21,7 +17,7 @@ declare type CaptureConfiguration = {
 
 declare type CaptureEvent = {
   time: number;
-  type: Listeners;
+  type: Listener;
   data: CoordinateData | KeyData;
 }
 

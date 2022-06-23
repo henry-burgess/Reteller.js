@@ -3,14 +3,14 @@
 <html lang="en">
   <head>
     <title>Example</title>
-    <script src="experiment.js" type="module"></script>
     <script src="../node_modules/jspsych/jspsych.js"></script>
     <script src="../node_modules/jspsych/plugins/jspsych-instructions.js"></script>
     <link rel="stylesheet" href="../node_modules/jspsych/css/jspsych.css" />
   </head>
   <body>
-    <div id="experiment"></div>
   </body>
+
+  <!-- Basic jsPsych experiment -->
   <script>
     const timeline = [
       {
@@ -27,8 +27,10 @@
     ];
 
     jsPsych.init({
-      display_element: 'experiment',
       timeline: timeline,
     });
   </script>
+
+  <!-- Load the capture and replay script -->
+  <script src="experiment.js" type="module"></script>
 </html>

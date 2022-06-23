@@ -3,6 +3,7 @@ import { PlayerEvent } from "../PlayerEvent";
 
 // Logging library
 import consola from "consola";
+import { getHeight, getWidth } from "../../functions";
 
 /**
  * @summary Player class for running the re-enactment
@@ -16,6 +17,8 @@ export class Player {
   // Rescaling
   private captureDimensions: [number, number];
   private targetDimensions: [number, number];
+  private widthScale: number;
+  private heightScale: number;
 
   // Target HTMLElement
   private targetSelector: string;
@@ -37,7 +40,7 @@ export class Player {
 
   /**
    * Default constructor for the Player class.
-   * @param {string} _data Object containing all the collected data
+   * @param {CaptureData} _data Object containing all the collected data
    * used to replay the participant actions
    * @param {number} _rate Tick rate to use for performing the actions.
    * Measured using milliseconds. Default is 1 millisecond tick
@@ -71,8 +74,12 @@ export class Player {
       this.target = document.body;
     }
 
-    // Get the target dimensions
-    this.targetDimensions = [this.target.clientWidth, this.target.clientHeight];
+    // Set the target dimensions
+    this.targetDimensions = [getWidth(),getHeight()];
+
+    // Calculate scaling factors
+    this.widthScale = this.targetDimensions[0] / this.captureDimensions[0];
+    this.heightScale = this.targetDimensions[1] / this.captureDimensions[1];
   }
 
   /**
@@ -135,8 +142,10 @@ export class Player {
     this.pathMarkers = [];
     this.maxMarkers = 10;
 
+    // Scale the view before starting playback
     this._scale();
 
+    // Start the interval ticker
     this.ticker = window.setInterval(this._tick.bind(this), this.rate);
   }
 
@@ -152,8 +161,7 @@ export class Player {
 
     // Apply scaling
     if (this.target) {
-      this.target.style.width = `${this.captureDimensions[0]}px`;
-      this.target.style.height = `${this.captureDimensions[1]}px`;
+      this.target.style.transform = `scale(${this.widthScale}, ${this.heightScale})`
     }
   }
 
@@ -230,19 +238,19 @@ export class Player {
     // Check if the mouse cursor has been created yet
     if (this.mouseMarker) {
       // Update the position of the mouse marker
-      this.mouseMarker.style.top = `${eventData.y}px`;
-      this.mouseMarker.style.left = `${eventData.x}px`;
+      this.mouseMarker.style.left = `${eventData.x  * this.widthScale}px`;
+      this.mouseMarker.style.top = `${eventData.y * this.heightScale}px`;
 
       // Add and store the movement indicator
       if (this.target) {
-        const pathMarker = this._createDot(eventData.x, eventData.y, "black");
+        const pathMarker = this._createDot(eventData.x * this.widthScale, eventData.y * this.heightScale, "black");
         this.target.appendChild(pathMarker);
         this.pathMarkers.push(pathMarker);
       }
     } else {
       // Create and add the mouse marker
       if (this.target) {
-        this.mouseMarker = this._createDot(eventData.x, eventData.y, "red", 15);
+        this.mouseMarker = this._createDot(eventData.x * this.widthScale, eventData.y * this.heightScale, "red", 15);
         this.target.appendChild(this.mouseMarker);
       }
     }
@@ -256,11 +264,12 @@ export class Player {
     const eventData = _event.getData() as CoordinateData;
 
     // Click the element at the specific point
-    (document.elementFromPoint(eventData.x, eventData.y) as HTMLElement).click();
+    (document.elementFromPoint(eventData.x * this.widthScale, eventData.y * this.heightScale) as HTMLElement).click();
+    consola.info(`[Player] Click event (${eventData.x * this.widthScale}, ${eventData.y * this.heightScale}) @ ${performance.now()}ms`);
 
     // Add and store the click indicator
     if (this.target){
-      const clickMarker = this._createDot(eventData.x, eventData.y, "lime", 10);
+      const clickMarker = this._createDot(eventData.x * this.widthScale, eventData.y * this.heightScale, "lime", 10);
       this.target.appendChild(clickMarker);
       this.clickMarkers.push(clickMarker);
     }

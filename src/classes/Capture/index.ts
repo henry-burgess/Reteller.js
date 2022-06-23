@@ -3,6 +3,7 @@ import { PlayerEvent } from "../PlayerEvent";
 
 // Logging library
 import consola from "consola";
+import { getHeight, getWidth } from "../../functions";
 
 /**
  * @summary Capture class that handles data capturing
@@ -48,7 +49,7 @@ export class Capture {
     this.endTime = -1;
 
     // Intitial resolution measurement
-    this.resolution = [window.innerWidth, window.innerHeight];
+    this.resolution = [getWidth(), getHeight()];
   }
 
   // ---- Public methods for start and stop ----
@@ -64,7 +65,7 @@ export class Capture {
 
     // Record the screen area dimensions
     if (this.target !== null) {
-      this.resolution = [this.target.clientWidth, this.target.clientHeight];
+      // this.resolution = [this.target.clientWidth, this.target.clientHeight];
     }
   }
 
@@ -98,10 +99,10 @@ export class Capture {
   /**
    * Log and store a new event
    * @param {number} _time event time
-   * @param {Listeners} _type event type
+   * @param {Listener} _type event type
    * @param {any} _data event data
    */
-  private _logEvent(_time: number, _type: Listeners, _data: CoordinateData | KeyData) {
+  private _logEvent(_time: number, _type: Listener, _data: CoordinateData | KeyData) {
     this.data.push(
       new PlayerEvent({
         time: _time,
@@ -117,9 +118,9 @@ export class Capture {
    */
   private _setup(): void {
     // Setup the keypress and mouse handlers
-    this._createHandler(Listeners.Click);
-    this._createHandler(Listeners.Keyboard);
-    this._createHandler(Listeners.Mouse);
+    this._createHandler("click");
+    this._createHandler("keyboard");
+    this._createHandler("mouse");
   }
 
   /**
@@ -175,12 +176,12 @@ export class Capture {
    * Create a handler of a specific type of event
    * @param {Listeners} _type the type of handler
    */
-  private _createHandler(_type: Listeners) {
-    if (_type === Listeners.Click) {
+  private _createHandler(_type: Listener) {
+    if (_type === "click") {
       document.body.addEventListener("click", this._clickEvent.bind(this));
-    } else if (_type === Listeners.Keyboard) {
+    } else if (_type === "keyboard") {
       document.body.addEventListener("keydown", this._keyboardEvent.bind(this));
-    } else if (_type === Listeners.Mouse) {
+    } else if (_type === "mouse") {
       document.body.addEventListener("mousemove", this._mouseLogger.bind(this));
     } else {
       consola.warn(`Unknown handler type '${_type}'`);
@@ -192,7 +193,7 @@ export class Capture {
    * @param {KeyboardEvent} _e the KeyboardEvent raised
    */
   private _keyboardEvent(_e: KeyboardEvent) {
-    this._logEvent(performance.now() - this.startTime, Listeners.Keyboard, {
+    this._logEvent(performance.now() - this.startTime, "keyboard", {
       key: _e.key,
     });
   }
@@ -202,7 +203,7 @@ export class Capture {
    * @param {MouseEvent} _e the PointEvent raised
    */
   private _clickEvent(_e: MouseEvent) {
-    this._logEvent(performance.now() - this.startTime, Listeners.Click, {
+    this._logEvent(performance.now() - this.startTime, "click", {
       x: _e.pageX,
       y: _e.pageY,
     });
@@ -214,7 +215,7 @@ export class Capture {
    */
   private _mouseLogger(_e: MouseEvent) {
     // Called on interval
-    this._logEvent(performance.now() - this.startTime, Listeners.Mouse, {
+    this._logEvent(performance.now() - this.startTime, "mouse", {
       x: _e.pageX,
       y: _e.pageY,
     });
